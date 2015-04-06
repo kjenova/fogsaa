@@ -57,7 +57,7 @@ function FOGSAA(X, Y, s::AlignmentScoring)
 		if isdefined(queue, i)
 			j = 1
 
-			while i <= endof(queue[i]) && queue[i][j].m <= m
+			while j <= endof(queue[i]) && queue[i][j].m <= m
 				j += 1
 			end
 
