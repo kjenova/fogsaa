@@ -51,6 +51,14 @@ function FOGSAA(X, Y, s::AlignmentScoring)
 
 		i = M - gm + 1
 
+		if i > Mi
+			Mi = i
+		end
+
+		if i < mi || mi == 0
+			mi = i
+		end
+
 		if isdefined(queue, i)
 			j = 1
 
@@ -135,6 +143,7 @@ function FOGSAA(X, Y, s::AlignmentScoring)
 	end
 
 	while Mi - 1 + gm > scores[ox, oy]
+	let
 		x, y, alignment = dequeue()
 
 		while x <= endof(X) && y <= endof(Y)
@@ -246,7 +255,7 @@ function FOGSAA(X, Y, s::AlignmentScoring)
 							sorted <<= 2
 							sorted |= Xy
 						else
-							sorted &= 0b11
+							sorted = u
 							t = t << 4 | Xy << 2
 							sorted |= t
 						end
@@ -257,14 +266,11 @@ function FOGSAA(X, Y, s::AlignmentScoring)
 			end
 			end
 
-			if sorted == 0x0
+			alignment = sorted & 0b11
+
+			if alignment == 0x0
 				@goto prune
 			end
-
-			alignment = sorted & 0b11
-			x = alignment == xY? x : x + 1
-			y = alignment == Xy? y : y + 1
-			alignments[x, y] = alignment
 
 			a = (sorted & 0b1100) >> 2
 
@@ -274,7 +280,7 @@ function FOGSAA(X, Y, s::AlignmentScoring)
 
 				enqueue(Mm[2*a-1], Mm[2*a], x1, y1, a)
 
-				b = (sorted & 0b110000) >> 4
+				b = sorted >> 4
 
 				if b != 0 && Mm[2*b-1] > Mm[2*a]
 					x2 = b == xY? x : x + 1
@@ -283,11 +289,16 @@ function FOGSAA(X, Y, s::AlignmentScoring)
 					enqueue(Mm[2*b-1], Mm[2*b], x2, y2, b)
 				end
 			end
+
+			x = alignment == xY? x : x + 1
+			y = alignment == Xy? y : y + 1
+			alignments[x, y] = alignment
 		end
 
 		ox = x
 		oy = y
 @label prune
+	end
 	end
 
 	print_alignment()
