@@ -130,6 +130,16 @@ function FOGSAA(X, Y, s::AlignmentScoring)
 			end
 		end
 
+		if x != 1
+			t = x - 1
+			X! = string(X[1:t], X!)
+			Y! = string(repeat("-", t), Y!)
+		elseif y != 1
+			t = y - 1
+			Y! = string(Y[1:t], Y!)
+			X! = string(repeat("-", t), X!)
+		end
+
 		r = endof(X!) - endof(Y!)
 
 		if r < 0
