@@ -20,7 +20,7 @@ function FOGSAA(X, Y, s::AlignmentScoring)
 	gM = g0 == 0? 0 : s.gap_start
 
 	if g0 < 0
-		gM += -g0 * s.gap		
+		gM += -g0 * s.gap
 		m0 = endof(X)
 	else
 		gM += g0 * s.gap
@@ -30,16 +30,13 @@ function FOGSAA(X, Y, s::AlignmentScoring)
 	gm = gM + m0 * s.mismatch
 	gM += m0 * s.match
 
-	alignments = fill(0x0, endof(X) + 1, endof(Y))
+	alignments = fill(0x0, endof(X) + 1, endof(Y) + 1)
 	scores = fill(gm, endof(X) + 1, endof(Y) + 1)
 	scores[1, 1] = 0
 
 	Mi = mi = gM - gm + 1
 	queue = Vector{Vector{FOGSAABranch}}(Mi)
 	queue[Mi] = [FOGSAABranch(1, 1, 1)]
-
-	ox = endof(X) + 1
-	oy = endof(Y) + 1
 
 	function enqueue(M, m, x, y, alignment)
 		if alignment & 1 != 0
@@ -95,6 +92,46 @@ function FOGSAA(X, Y, s::AlignmentScoring)
 		end
 
 		x, y, alignment
+	end
+
+	ox = endof(X) + 1
+	oy = endof(Y) + 1
+
+	function print_alignment()
+		X! = X[ox:end]
+		Y! = Y[oy:end]			
+
+		x = ox
+		y = oy
+
+		while x != 1 && y != 1
+			if alignments[x, y] == xY
+				y = y - 1
+				X! = string("-", X!)
+				Y! = string(Y[y], Y!)
+			elseif alignments[x, y] == Xy
+				x = x - 1
+				X! = string(X[x], X!)
+				Y! = string("-", Y!)
+			else
+				x = x - 1
+				y = y - 1
+
+				X! = string(X[x], X!)
+				Y! = string(Y[y], Y!)
+			end
+		end
+
+		r = endof(X!) - endof(Y!)
+
+		if r < 0
+			X! = string(X!, repeat("-", -r))
+		else
+			Y! = string(Y!, repeat("-", r))
+		end
+
+		println(X!)
+		println(Y!)
 	end
 
 	while Mi - 1 + gm > scores[ox, oy]
@@ -225,22 +262,23 @@ function FOGSAA(X, Y, s::AlignmentScoring)
 			end
 
 			alignment = sorted & 0b11
-			x = alignment & (XY | Xy) == 0? x : x + 1
-			y = alignment & (XY | xY) == 0? y : y + 1
+			x = alignment == xY? x : x + 1
+			y = alignment == Xy? y : y + 1
+			alignments[x, y] = alignment
 
 			a = (sorted & 0b1100) >> 2
 
 			if a != 0 && Mm[2*a-1] > Mm[2*alignment]
-				x1 = a & (XY | Xy) == 0? x : x + 1
-				y1 = a & (XY | xY) == 0? y : y + 1
+				x1 = a == xY? x : x + 1
+				y1 = a == Xy? y : y + 1
 
 				enqueue(Mm[2*a-1], Mm[2*a], x1, y1, a)
 
 				b = (sorted & 0b110000) >> 4
 
 				if b != 0 && Mm[2*b-1] > Mm[2*a]
-					x2 = b & (XY | Xy) == 0? x : x + 1
-					y2 = b & (XY | xY) == 0? y : y + 1
+					x2 = b == xY? x : x + 1
+					y2 = b == Xy? y : y + 1
 
 					enqueue(Mm[2*b-1], Mm[2*b], x2, y2, b)
 				end
@@ -251,4 +289,6 @@ function FOGSAA(X, Y, s::AlignmentScoring)
 		oy = y
 @label prune
 	end
+
+	print_alignment()
 end
