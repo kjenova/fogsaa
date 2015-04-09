@@ -30,7 +30,7 @@ function FOGSAA(X, Y, s::AlignmentScoring)
 	gm = gM + m0 * s.mismatch
 	gM += m0 * s.match
 
-	alignments = fill(0x0, endof(X) + 1, endof(Y) + 1)
+	alignments = zeros(UInt8, endof(X) + 1, endof(Y) + 1)
 	scores = fill(gm, endof(X) + 1, endof(Y) + 1)
 	scores[1, 1] = 0
 
