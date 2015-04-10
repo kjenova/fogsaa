@@ -167,14 +167,12 @@ function FOGSAA(X, Y, s::AlignmentScoring)
 			Mm = Vector{Int}(6)
 
 			if score[XY] > scores[x + 1, y + 1]
-				scores[x + 1, y + 1] = score[XY]
+				scores[x + 1, y + 1] = Mm[2*XY-1] = score[XY]
 			let
 				rx = endof(X) - x
 				ry = endof(Y) - y
 				g = rx - ry
 				m = ry
-
-				Mm[2*XY-1] = score[XY]
 
 				if g != 0
 					Mm[2*XY-1] += s.gap_start
@@ -196,14 +194,12 @@ function FOGSAA(X, Y, s::AlignmentScoring)
 			end
 
 			if score[xY] > scores[x, y + 1]
-				scores[x, y + 1] = score[xY]
+				scores[x, y + 1] = Mm[2*xY-1] = score[xY]
 			let
 				rx = endof(X) + 1 - x
 				ry = endof(Y) - y
 				g = ry - rx
 				m = rx
-
-				Mm[2*xY-1] = score[xY]
 
 				if g < 0
 					g = -g
@@ -230,14 +226,12 @@ function FOGSAA(X, Y, s::AlignmentScoring)
 			end
 
 			if score[Xy] > scores[x + 1, y]
-				scores[x + 1, y] = score[Xy]
+				scores[x + 1, y] = Mm[2*Xy-1] = score[Xy]
 			let
 				rx = endof(X) - x
 				ry = endof(Y) + 1 - y
 				g = rx - ry
 				m = ry
-
-				Mm[2*Xy-1] = score[Xy]
 
 				if g < 0
 					g = -g
@@ -250,7 +244,7 @@ function FOGSAA(X, Y, s::AlignmentScoring)
 				Mm[2*Xy-1] += m * s.match
 
 				if Mm[2*Xy-1] > scores[ox, oy]
-					t = (sorted & 0b1100) >> 2
+					t = sorted >> 2
 
 					if t == 0 ||
 					  (Mm[2*Xy-1] >= Mm[2*t-1] &&
@@ -282,7 +276,7 @@ function FOGSAA(X, Y, s::AlignmentScoring)
 				@goto prune
 			end
 
-			a = (sorted & 0b1100) >> 2
+			a = sorted >> 2
 
 			if a != 0 && Mm[2*a-1] > Mm[2*alignment]
 				x1 = a == xY? x : x + 1
