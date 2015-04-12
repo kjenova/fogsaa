@@ -114,16 +114,16 @@ function FOGSAA(X, Y, s::AlignmentScoring)
 
 		while x != 1 && y != 1
 			if alignments[x, y] == xY
-				y = y - 1
+				y -= 1
 				X! = string("-", X!)
 				Y! = string(Y[y], Y!)
 			elseif alignments[x, y] == Xy
-				x = x - 1
+				x -= 1
 				X! = string(X[x], X!)
 				Y! = string("-", Y!)
 			else
-				x = x - 1
-				y = y - 1
+				x -= 1
+				y -= 1
 
 				X! = string(X[x], X!)
 				Y! = string(Y[y], Y!)
@@ -164,58 +164,59 @@ function FOGSAA(X, Y, s::AlignmentScoring)
 				  (alignment == xY? 0 : s.gap_start)),
 				 (scores[x, y] + s.gap +
 				  (alignment == Xy? 0 : s.gap_start))]
-			Mm = Vector{Int}(6)
+			M = Vector{Int}(3)
+			m = Vector{Int}(3)
 
 			if score[XY] > scores[x + 1, y + 1]
-				scores[x + 1, y + 1] = Mm[2*XY-1] = score[XY]
+				scores[x + 1, y + 1] = M[XY] = score[XY]
 			let
 				rx = endof(X) - x
 				ry = endof(Y) - y
 				g = rx - ry
-				m = ry
+				r = ry
 
 				if g != 0
 					Mm[2*XY-1] += s.gap_start
 
 					if g < 0
 						g = -g
-						m = rx
+						r = rx
 					end
 				end
 
-				Mm[2*XY-1] += g * s.gap
-				Mm[2*XY] = Mm[2*XY-1] + m * s.mismatch
-				Mm[2*XY-1] += m * s.match
+				Mm[XY] += g * s.gap
+				m[XY] = Mm[XY] + r * s.mismatch
+				M[XY] += r * s.match
 
-				if Mm[2*XY-1] > scores[ox, oy]
+				if Mm[XY] > scores[ox, oy]
 					sorted = XY
 				end
 			end
 			end
 
 			if score[xY] > scores[x, y + 1]
-				scores[x, y + 1] = Mm[2*xY-1] = score[xY]
+				scores[x, y + 1] = M[xY] = score[xY]
 			let
 				rx = endof(X) + 1 - x
 				ry = endof(Y) - y
 				g = ry - rx
-				m = rx
+				r = rx
 
 				if g < 0
 					g = -g
-					m = ry
-					Mm[2*xY-1] += s.gap_start
+					r = ry
+					M[xY] += s.gap_start
 				end
 
-				Mm[2*xY-1] += g * s.gap
-				Mm[2*xY] = Mm[2*xY-1] + m * s.mismatch
-				Mm[2*xY-1] += m * s.match
+				M[xY] += g * s.gap
+				m[xY] = M[xY] + r * s.mismatch
+				M[xY] += r * s.match
 
-				if Mm[2*xY-1] > scores[ox, oy]
+				if M[xY] > scores[ox, oy]
 					if sorted == 0x0 ||
-					  (Mm[2*xY-1] >= Mm[2*XY-1] &&
-					   (Mm[2*xY-1] > Mm[2*XY-1] ||
-					    Mm[2*xY] > Mm[2*XY]))
+					  (M[xY] >= M[XY] &&
+					   (M[xY] > M[XY] ||
+					    m[xY] > m[XY]))
 						sorted <<= 2
 						sorted |= xY
 					else
@@ -226,36 +227,36 @@ function FOGSAA(X, Y, s::AlignmentScoring)
 			end
 
 			if score[Xy] > scores[x + 1, y]
-				scores[x + 1, y] = Mm[2*Xy-1] = score[Xy]
+				scores[x + 1, y] = M[Xy] = score[Xy]
 			let
 				rx = endof(X) - x
 				ry = endof(Y) + 1 - y
 				g = rx - ry
-				m = ry
+				r = ry
 
 				if g < 0
 					g = -g
-					m = rx
-					Mm[2*Xy-1] += s.gap_start
+					r = rx
+					M[Xy] += s.gap_start
 				end
 
-				Mm[2*Xy-1] += g * s.gap
-				Mm[2*Xy] = Mm[2*Xy-1] + m * s.mismatch
-				Mm[2*Xy-1] += m * s.match
+				M[Xy] += g * s.gap
+				m[Xy] = M[Xy] + r * s.mismatch
+				M[Xy] += r * s.match
 
-				if Mm[2*Xy-1] > scores[ox, oy]
+				if M[Xy] > scores[ox, oy]
 					t = sorted >> 2
 
 					if t == 0 ||
-					  (Mm[2*Xy-1] >= Mm[2*t-1] &&
-					   (Mm[2*Xy-1] > Mm[2*t-1] ||
-					    Mm[2*Xy] > Mm[2*t]))
+					  (M[Xy] >= M[t] &&
+					   (M[Xy] > M[t] ||
+					    m[Xy] > m[t]))
 						u = sorted & 0b11
 
 						if u == 0 ||
-						  (Mm[2*Xy-1] >= Mm[2*u-1] &&
-						   (Mm[2*Xy-1] > Mm[2*u-1] ||
-						    Mm[2*Xy] > Mm[2*u]))
+						  (M[Xy] >= M[u] &&
+						   (M[Xy] > M[u] ||
+						    m[Xy] > m[u]))
 							sorted <<= 2
 							sorted |= Xy
 						else
@@ -276,21 +277,17 @@ function FOGSAA(X, Y, s::AlignmentScoring)
 				@goto prune
 			end
 
-			a = sorted >> 2
+			a = (sorted & 0b1100) >> 2
 
-			if a != 0 && Mm[2*a-1] > Mm[2*alignment]
-				x1 = a == xY? x : x + 1
-				y1 = a == Xy? y : y + 1
-
-				enqueue(Mm[2*a-1], Mm[2*a], x1, y1, a)
+			if a != 0 && M[a] > m[alignment]
+				enqueue(M[a], m[a], a == xY? x : x + 1,
+					a == Xy? y : y + 1, a)
 
 				b = sorted >> 4
 
-				if b != 0 && Mm[2*b-1] > Mm[2*a]
-					x2 = b == xY? x : x + 1
-					y2 = b == Xy? y : y + 1
-
-					enqueue(Mm[2*b-1], Mm[2*b], x2, y2, b)
+				if b != 0 && M[b] > m[a]
+					enqueue(M[b], m[b], b == xY? x : x + 1,
+						b == Xy? y : y + 1, b)
 				end
 			end
 
