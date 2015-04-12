@@ -115,10 +115,12 @@ function FOGSAA(X, Y, s::AlignmentScoring)
 		while x != 1 && y != 1
 			if alignments[x, y] == xY
 				y -= 1
+
 				X! = string("-", X!)
 				Y! = string(Y[y], Y!)
 			elseif alignments[x, y] == Xy
 				x -= 1
+
 				X! = string(X[x], X!)
 				Y! = string("-", Y!)
 			else
@@ -176,7 +178,7 @@ function FOGSAA(X, Y, s::AlignmentScoring)
 				r = ry
 
 				if g != 0
-					Mm[2*XY-1] += s.gap_start
+					M[XY] += s.gap_start
 
 					if g < 0
 						g = -g
@@ -184,11 +186,11 @@ function FOGSAA(X, Y, s::AlignmentScoring)
 					end
 				end
 
-				Mm[XY] += g * s.gap
-				m[XY] = Mm[XY] + r * s.mismatch
+				M[XY] += g * s.gap
+				m[XY] = M[XY] + r * s.mismatch
 				M[XY] += r * s.match
 
-				if Mm[XY] > scores[ox, oy]
+				if M[XY] > scores[ox, oy]
 					sorted = XY
 				end
 			end
